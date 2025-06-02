@@ -42,6 +42,8 @@ Leg::Leg(LegId id, int16_t anchorX, int16_t anchorY, float anchorAngle)
 void Leg::setFootPosition(int16_t footPosX, int16_t footPosY, int16_t footPosZ)
 {
 
+    // TODO handle legs initial angle vs body
+
     // Calculate foot position relative to anchor
     int16_t x = footPosX - m_anchorX; // X coordinate relative to anchor
     int16_t y = footPosY - m_anchorY; // Y coordinate relative to anchor

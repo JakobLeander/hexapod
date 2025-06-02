@@ -1,0 +1,44 @@
+Hello guys,
+
+This plugin will help you connect your unity game/app to your arduino robot/project,
+to controll it, transfer data between the arduino and bluetooth enabled android.
+
+This plugin has been tested with HC-05/06 modules
+
+A tutorial is also provided in the plugin to help you use the code.
+
+The manager.cs script - located in the Scripts folder - is an example of a well structured example on how to use this plugin.
+
+In case of any troubles, sent me an email to abouzaidan.tony@gmail.com so i can assist you.
+
+Thank you!
+
+
+PS
+
+MOVE THE PLUGIN FOLDER TO THE ASSET FOLDER 
+
++ASSETS
+++BluetoothAPI
++++Plugins
++++Scene
++++Scripts
+
+TO
+
++ASSETS
+++Plugins
+++BluetoothAPI
++++Scene
++++Scripts
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! !!!!!!!!!!!! !       !!    !!! !!! !! !! !!! !!!    !!!!!!!!!!!!!!!!!!
+!!!! !!!!!!!!!! !! !!!!! !! !!! !!  !! !! !!  !! !! !!!!!!!!!!!!!!!!!!!!!!
+!!!!! !!! !!!! !!! !!!!! !!    !!! ! ! !! !! ! ! !! !!  !!!!!!!!!!!!!!!!!!
+!!!!!! ! !! ! !!!!       !! ! !!!! !!  !! !! !!  !! !!!! !!!!!!!!!!!!!!!!!
+!!!!!!! !!!! !!!!! !!!!! !! !! !!! !!! !! !! !!! !!!    !!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IF YOU ARE UPDATING TO THIS NEW VERSION FROM VERSION 1.0, MAKE SURE TO DELETE 2 DLL FILES.
+THE 1ST ONE IS : Plugins/UnityBluetoothAPI.dll
+THE 2ND ONE IS : Plugins/Android/UnityBluetoothAPI.dll

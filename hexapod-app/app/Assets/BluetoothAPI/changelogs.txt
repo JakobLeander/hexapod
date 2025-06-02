@@ -1,0 +1,95 @@
++ 5.5
+    - Location permission is not a requirement for BLE
+    - Added new sample scenes
++ 5.4.6
+    - Fix bug causing empty nearby devices list after scanning on android
+    - Performance improvements on windows
++ 5.4.5
+    - Fix bug on iOS and macOS causing app crash
++ 5.4.4
+    - RSSI value available when scanning for devices
+    - Fix bug causing OnConnectionFailed event for fired on MacOS and iOS
++ 5.4.3
+    - Minor Changes
++ 5.4.2
+    - Improvement for multi-device connection on macos and ios
+    - fix compilation problem for ios and native android
+    - misc minor bug fixes
++ 5.4.1
+    - Support for BLE on Android 10
++ 5.4.0
+    - Fix bug in android causing all bluetooth instances to disconnect if one gets disconnected
+    - Allow to use BLE inside Unity editor during development
+    - Minor improvements
++ 5.3.1
+    - fix for windows platform causing unity to hang
+    - bug fix for android causing previously found devices to appears in the next scan even when not available.
++ 5.3.0
+    - ability to implement custom Stream Manager
+    - performance improvements on android
+    - bug fixed for all platforms causing empty scan results afteer disconnection
+    - add getGattServices function to return peripheral gatt services list.
++ 5.2.2
+    - minor improvements for ios
+    - fix bug with terminator based stream for all platforms
++ 5.2.1
+    - fix bug in android
+    - fix bug on mac and ios causing not invoking connected after disconnecting
+    - additional demo scene
++ 5.2.0
+    - Ability to connect to multiple bluetooth devices, simply call GetNewInstance to get a new bluetoothHelper object
+    - setTxCharacteristic and setRxCharacteristic, two functions added to define in and out characteristic for BLE in case
+        you need to use provided stream managers
+    - getPairedDevicesList function used to get all paired devices
++ 5.1.5
+    - Fix editor crashing occasionally on macos
+    - Enhanced compatibility for BLE for app platforms
++ 5.1.4
+    - Fix bug causing \0 to append to all terminator based sent messages starting version 5.1.2 affecting all platforms
+    - Improvements for UWP.
++ 5.1.3
+    - Fix bug found in latest version prefenting macos and ios from receiving data
+    - Enhancements for multiscene functionalities
++ 5.1.2
+    - Urgent update for all platforms
++ 5.1.1
+    - Fix problem on android causing the inability to subscribe to multiple characteristics
+    - Minor changes for better performance
++ 5.1.0
+    - Add support for sending/receiving messages with custom gatt services, characteristic for BLE on UWP
++ 5.0.4
+    -Fix bug causing unity app/editor to crash on ios/macos
++ 5.0.3
+    - add read characteristic feature
++ 5.0.2
+    - MacOS and iOS not sending Data
++ 5.0.1
+    - Fixed unexpected behaviour for iOS.
++ 5.00
+    - Add support for sending/receiving messages with custom gatt services, characteristic for BLE (Android, MacOS and iOS)
+    - Fix various bugs.
+    - support for custom gatt characteristics for UWP very soon
++ 4.85
+    - Fix bug resulting problems when using the plugin across multiple scenes on Android
++ 4.8
+    - Fix bug resulting problems when using the plugin across multiple scenes
++ 4.7
+    - Fix bug affecting binary data transmission in presence of null byte.
+    - Add ReadBytes method.
++ 4.6
+    - Add IsBluetoothEnabled method for Android, iOS, MacOS to test is bluetooth is turned on.
+    - Add EnableBluetooth method for Android to turn ON/OFF bluetooth.
++ 4.5
+    - Fix bug affection iOS and MasOS : duplicate results when scanning multiple times.
++ 4.4
+    - Fix bug resulting distinct messages being concatenated affecting some Android, iOS and MacOS users.
++ 4.3.1
+    - Add fix for a bug on Android version occurring with some bluetooth modules.
++ 4.3
+    - Add support for Bluetooth Classic for UWP.
+    - Add new stream mode FixedLengthStream.
++ 4.2.6
+    - Fix (Library not imported) on MacOS.
++ 4.0
+    - isDeviceFound is now isDevicePaired.
+    - stopListening is now Disconnect.

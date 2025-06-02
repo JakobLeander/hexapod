@@ -1,0 +1,11 @@
+framework module BluetoothUnityAPI {
+  umbrella header "BluetoothUnityAPI.h"
+
+  export *
+  module * { export * }
+}
+
+module BluetoothUnityAPI.Swift {
+    header "BluetoothUnityAPI-Swift.h"
+    requires objc
+}

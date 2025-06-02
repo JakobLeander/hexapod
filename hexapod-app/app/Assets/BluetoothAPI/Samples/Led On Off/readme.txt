@@ -1,0 +1,1 @@
+This sample scene is a shows how to send single byte from unity to arduino and feedback
