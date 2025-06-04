@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: d4b2b0d911a01a64ebfca9918e2b90b4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107631
+  packageName: Joystick Pack
+  packageVersion: 2.1
+  assetPath: Assets/Joystick Pack/Scripts/Editor/JoystickEditor.cs
+  uploadId: 301683

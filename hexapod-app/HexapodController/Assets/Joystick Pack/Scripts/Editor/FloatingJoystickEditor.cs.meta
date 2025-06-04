@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 614d06243900d764f9c50b4da2c950a3
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107631
+  packageName: Joystick Pack
+  packageVersion: 2.1
+  assetPath: Assets/Joystick Pack/Scripts/Editor/FloatingJoystickEditor.cs
+  uploadId: 301683

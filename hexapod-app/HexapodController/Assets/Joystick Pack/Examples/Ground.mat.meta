@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c569c280f0eb52a49a7b2a6b8b0cbcf8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107631
+  packageName: Joystick Pack
+  packageVersion: 2.1
+  assetPath: Assets/Joystick Pack/Examples/Ground.mat
+  uploadId: 301683
