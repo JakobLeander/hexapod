@@ -14,11 +14,12 @@ void Servo::initialize(String id, uint8_t pololuChannel, bool isReverse)
 void Servo::setAngle(float angle)
 {
     angle = constrain(angle, MIN_ANGLE, MAX_ANGLE);
+    m_angle = angle;
+
     if (m_isReverse)
     {
         angle = -angle;
     }
-    m_angle = angle;
     m_pulseWidth = map(angle, MIN_ANGLE, MAX_ANGLE, PULSE_WIDTH_MIN, PULSE_WIDTH_MAX);
 }
 

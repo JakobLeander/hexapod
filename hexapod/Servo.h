@@ -52,6 +52,10 @@ public:
     /// @brief Desired Servo Speed
     /// @return Target servo speed (0-100)
     uint8_t getTargetSpeed() const { return m_speed; }
+
+    /// @brief Is reversed
+    /// @return Is reverse
+    bool isReverse() const { return m_isReverse; }
 };
 
 #endif
