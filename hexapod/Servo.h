@@ -10,8 +10,8 @@ private:
     const uint16_t PULSE_WIDTH_CENTER = PULSE_WIDTH_MIN + (PULSE_WIDTH_MAX - PULSE_WIDTH_MIN) / 2;
     const float MIN_ANGLE = -90.0;
     const float MAX_ANGLE = +90.0;
-    const int8_t MIN_SPEED = 0;
-    const int8_t MAX_SPEED = 100;
+    const uint8_t MIN_SPEED = 0;
+    const uint8_t MAX_SPEED = 100;
 
     String m_id = "";
     uint8_t m_pololuChannel = 0;

@@ -50,7 +50,33 @@ public:
     /// @param z vs body center in milimeters
     /// @param speed how fast the robot should move
     /// @return true if position is valid and set, false if position is illegal
-    bool setFootPosition(int16_t footPosX, int16_t footPosY, int16_t footPosZ, uint16_t speed);
+    bool setFootPosition(int16_t footPosX, int16_t footPosY, int16_t footPosZ, int8_t speed);
+
+    void zeroAngles(uint8_t speed)
+    {
+        // Set all servos to zero angle
+        m_footServo.setAngle(0);
+        m_kneeServo.setAngle(0);
+        m_hipServo.setAngle(0);
+
+        // Set speed for all servos
+        m_footServo.setSpeed(speed);
+        m_kneeServo.setSpeed(speed);
+        m_hipServo.setSpeed(speed);
+    }
+
+    void identifyLeg(uint8_t speed)
+    {
+        // Set all servos to zero angle
+        m_footServo.setAngle(10);
+        m_kneeServo.setAngle(10);
+        m_hipServo.setAngle(10);
+
+        // Set speed for all servos
+        m_footServo.setSpeed(speed);
+        m_kneeServo.setSpeed(speed);
+        m_hipServo.setSpeed(speed);
+    }
 };
 
 #endif
