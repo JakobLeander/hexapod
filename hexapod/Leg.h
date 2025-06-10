@@ -2,6 +2,8 @@
 #define LEG_H
 #include <Arduino.h>
 #include "Servo.h"
+#include "Poses.h"
+#include "Position.h"
 #include <Math.h>
 
 enum class LegId : byte
@@ -26,6 +28,9 @@ private:
     Servo m_footServo; // Foot servo
     Servo m_kneeServo; // Knee servo
     Servo m_hipServo;  // Hip servo
+    int16_t m_footPositionX;
+    int16_t m_footPositionY;
+    int16_t m_footPositionZ;
 
     const int16_t THIGH_LENGTH = 84;       // J2L: Length of leg segment from knee servo horn to foot servo horn
     const int16_t FOOT_LENGTH = 127;       // J3L Length of leg segment from foot servo horn to toe
@@ -44,13 +49,13 @@ public:
     Servo getKneeServo() { return m_kneeServo; }
     Servo getHipServo() { return m_hipServo; }
 
+    Position getFootPosition(){return Position{m_footPositionX, m_footPositionY, m_footPositionZ};}
+
     /// @brief Set foot position from body center
-    /// @param x vs body center in milimeters
-    /// @param y vs body center in milimeters
-    /// @param z vs body center in milimeters
+    /// @param footPosition vs body center in milimeters
     /// @param speed how fast the robot should move
     /// @return true if position is valid and set, false if position is illegal
-    bool setFootPosition(int16_t footPosX, int16_t footPosY, int16_t footPosZ, int8_t speed);
+    bool setFootPosition(Position footPosition, int8_t speed);
 
     void zeroAngles(uint8_t speed)
     {
