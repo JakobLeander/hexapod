@@ -9,7 +9,7 @@
 #define RX_PIN 10                      // Pin that is connected to Maestro TX pin
 #define TX_PIN 11                      // Pin that is connected to Maestro RX pin
 const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
-const uint8_t ROBOT_SPEED = 15;      // TODO: Make dynamic
+const uint8_t ROBOT_SPEED = 15;        // TODO: Make dynamic
 
 SoftwareSerial m_MaestroSerial(RX_PIN, TX_PIN);
 MiniMaestro m_maestro(m_MaestroSerial);
@@ -65,18 +65,33 @@ void loop()
         Serial.println("Received command: " + String(btCommand));
     }
 
-    if(btCommand=='H'){
-        m_hexapodDesiredState=HexapodState::HOME;
+    if (btCommand == 'H')
+    {
+        m_hexapodDesiredState = HexapodState::HOME;
     }
 
-    if(btCommand=='S'){
-        m_hexapodDesiredState=HexapodState::SLEEP;
+    if (btCommand == 'S')
+    {
+        m_hexapodDesiredState = HexapodState::SLEEP;
     }
 
-    if(btCommand=='W'){
-        m_hexapodDesiredState=HexapodState::WALKFORWARD;
+    if (btCommand == 'F')
+    {
+        m_hexapodDesiredState = HexapodState::WALKFORWARD;
+    }
+    if (btCommand == 'B')
+    {
+        m_hexapodDesiredState = HexapodState::WALKBACKWARD;
+    }
+    if (btCommand == 'L')
+    {
+        m_hexapodDesiredState = HexapodState::ROTATELEFT;
     }
 
+    if (btCommand == 'R')
+    {
+        m_hexapodDesiredState = HexapodState::ROTATERIGHT;
+    }
 
     // Do interpolation if we are in middle of a move
     if (m_interpolationCount >= 0 && not IsServosMoving())
@@ -114,7 +129,7 @@ void DetermineNextMove()
 
         // For gait state only allow changes when legs are in middle position
         // To check for completion of cycle 0 or 2 we look for cycle 1 or 3
-        if (m_hexapodState == HexapodState::WALKFORWARD)
+        if (m_hexapodState == HexapodState::WALKFORWARD || m_hexapodState == HexapodState::WALKBACKWARD || m_hexapodState == HexapodState::ROTATELEFT || m_hexapodState == HexapodState::ROTATERIGHT)
         {
             if (1 == m_walkCycleCount || 3 == m_walkCycleCount)
             {
@@ -153,6 +168,76 @@ void DetermineNextMove()
             break;
         case 3:
             MoveKeyFrame(m_poses.W3);
+            break;
+        }
+
+        m_walkCycleCount++;
+        if (m_walkCycleCount > 3)
+        {
+            m_walkCycleCount = 0;
+        }
+        break;
+    case HexapodState::WALKBACKWARD:
+        switch (m_walkCycleCount)
+        {
+        case 0:
+            MoveKeyFrame(m_poses.W0);
+            break;
+        case 1:
+            MoveKeyFrame(m_poses.W3);
+            break;
+        case 2:
+            MoveKeyFrame(m_poses.W2);
+            break;
+        case 3:
+            MoveKeyFrame(m_poses.W1);
+            break;
+        }
+
+        m_walkCycleCount++;
+        if (m_walkCycleCount > 3)
+        {
+            m_walkCycleCount = 0;
+        }
+        break;
+    case HexapodState::ROTATELEFT:
+        switch (m_walkCycleCount)
+        {
+        case 0:
+            MoveKeyFrame(m_poses.R0);
+            break;
+        case 1:
+            MoveKeyFrame(m_poses.R1);
+            break;
+        case 2:
+            MoveKeyFrame(m_poses.R2);
+            break;
+        case 3:
+            MoveKeyFrame(m_poses.R3);
+            break;
+        }
+
+        m_walkCycleCount++;
+        if (m_walkCycleCount > 3)
+        {
+            m_walkCycleCount = 0;
+        }
+        break;
+
+    case HexapodState::ROTATERIGHT:
+        switch (m_walkCycleCount)
+        {
+        case 0:
+            MoveKeyFrame(m_poses.R0);
+            break;
+        case 1:
+            MoveKeyFrame(m_poses.R3);
+            break;
+        case 2:
+            MoveKeyFrame(m_poses.R2);
+            break;
+        case 3:
+            MoveKeyFrame(m_poses.R1);
             break;
         }
 
