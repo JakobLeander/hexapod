@@ -6,157 +6,212 @@
 
 #include <PololuMaestro.h> // https://www.pololu.com/docs/0J40/5.e
 #include <SoftwareSerial.h>
-#define RX_PIN 10                       // Pin that is connected to Maestro TX pin
-#define TX_PIN 11                       // Pin that is connected to Maestro RX pin
+#define RX_PIN 10                      // Pin that is connected to Maestro TX pin
+#define TX_PIN 11                      // Pin that is connected to Maestro RX pin
 const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
-const uint16_t ROBOT_SPEED = 100;        // TODO: Make dynamic
+const uint8_t ROBOT_SPEED = 15;      // TODO: Make dynamic
 
 SoftwareSerial m_MaestroSerial(RX_PIN, TX_PIN);
 MiniMaestro m_maestro(m_MaestroSerial);
 Poses m_poses;
 
+enum HexapodState
+{
+    SLEEP,
+    HOME,
+    WALKFORWARD,
+    WALKBACKWARD,
+    ROTATELEFT,
+    ROTATERIGHT,
+};
+
 // Initialize legs with their respective anchor positions
-Leg m_LFront(LegId::LFRONT, 74, 39);
-Leg m_LMiddle(LegId::LMIDDLE, 0, 64);
-Leg m_LBack(LegId::LBACK, -74, 39);
-Leg m_RFront(LegId::RFRONT, 74, -39);
-Leg m_RMiddle(LegId::RMIDDLE, 0, -64);
-Leg m_RBack(LegId::RBACK, -74, -39);
+Leg m_LFrontLeg(LegId::LFRONT, 74, 39);
+Leg m_LMiddleLeg(LegId::LMIDDLE, 0, 64);
+Leg m_LBackLeg(LegId::LBACK, -74, 39);
+Leg m_RFrontLeg(LegId::RFRONT, 74, -39);
+Leg m_RMiddleLeg(LegId::RMIDDLE, 0, -64);
+Leg m_RBackLeg(LegId::RBACK, -74, -39);
 
 KeyFrame m_currentKeyFrame = {m_poses.Home};
 KeyFrame m_targetKeyFrame = {m_poses.Home};
-bool m_front=false;
 
 // TODO: Make dynamic
 // Since our body center is higher than joint it cannot be zero
 int16_t ROBOT_HEIGHT = 127; // Desired height of the robot body above floor in millimeters
-const int8_t INTERPOLATIONS=5;
+const int8_t INTERPOLATIONS = 5;
 int8_t m_interpolationCount = -1;
+uint8_t m_walkCycleCount = 0;
+
+char btCommand = '\0';
+
+HexapodState m_hexapodState = HexapodState::SLEEP;
+HexapodState m_hexapodDesiredState = HexapodState::SLEEP;
 
 void setup()
 {
     Serial.begin(115200);
     m_MaestroSerial.begin(115200);
     delay(1000);
+
     Serial.println("Ready!");
-
-    // Test Servo Calculations
-    ZeroAllLegs(); // Set all servos to zero angle
-    delay(1000);
-
-    // Move to Sleep position
-    MoveKeyFrame(m_poses.HomeLLegForward);
-
-    // m_RFront.setFootPosition(174, -70, -ROBOT_HEIGHT, ROBOT_SPEED); // Set foot position for middle leg
-    // CommitLeg(m_RFront);
-
-    /*
-    Serial.println("");
-    Serial.println("***** Foot moved forward a bit");
-    m_LMiddle.setFootPosition(0 + 70, 177, -ROBOT_HEIGHT, ROBOT_SPEED); // Set foot position for middle leg
-    CommitLeg(m_LMiddle);
-    delay(1000);
-    Serial.println("");
-    Serial.println("***** Foot moved middle");
-    m_LMiddle.setFootPosition(0 + 0, 177, -ROBOT_HEIGHT, ROBOT_SPEED); // Set foot position for middle leg
-    CommitLeg(m_LMiddle);
-    delay(1000);
-    Serial.println("");
-    Serial.println("***** Foot moved backward a bit");
-    m_LMiddle.setFootPosition(0 - 70, 177, -ROBOT_HEIGHT, ROBOT_SPEED); // Set foot position for middle leg
-    CommitLeg(m_LMiddle);
-    delay(1000);
-    */
 }
 
 void loop()
 {
+    if (Serial.available() > 0)
+    {
+        btCommand = Serial.read();
+        Serial.println("Received command: " + String(btCommand));
+    }
+
+    if(btCommand=='H'){
+        m_hexapodDesiredState=HexapodState::HOME;
+    }
+
+    if(btCommand=='S'){
+        m_hexapodDesiredState=HexapodState::SLEEP;
+    }
+
+    if(btCommand=='W'){
+        m_hexapodDesiredState=HexapodState::WALKFORWARD;
+    }
+
+
     // Do interpolation if we are in middle of a move
     if (m_interpolationCount >= 0 && not IsServosMoving())
     {
         Interpolate();
-        //delay(1000);
+
+        // Commit all legs to write values to servos
+        CommitAllLegs();
+
+        if (m_interpolationCount == 0)
+        {
+            // Update current key frame to target key frame
+            m_currentKeyFrame = m_targetKeyFrame;
+        }
+        m_interpolationCount--;
     }
 
-    if(m_interpolationCount<0){
-        if(m_front){
-            delay(1000);
-            MoveKeyFrame(m_poses.HomeLLegForward);
-            Serial.println("***** Move Forward");
-
-            m_front=false;
-        }
-        else{
-            delay(1000);
-            MoveKeyFrame(m_poses.HomeLLegBack);
-            m_front=true;
-            Serial.println("***** Move Backward");
-        }
+    if (m_interpolationCount < 0 && not IsServosMoving())
+    {
+        DetermineNextMove();
     }
-
-
 }
 
+void DetermineNextMove()
+{
+    // Trigger a state change if requested
+    if (m_hexapodDesiredState != m_hexapodState)
+    {
+        // for some states just do the change no danger
+        if (m_hexapodState == HexapodState::HOME || m_hexapodState == HexapodState::SLEEP)
+        {
+            m_hexapodState = m_hexapodDesiredState;
+            m_walkCycleCount = 0;
+        }
+
+        // For gait state only allow changes when legs are in middle position
+        // To check for completion of cycle 0 or 2 we look for cycle 1 or 3
+        if (m_hexapodState == HexapodState::WALKFORWARD)
+        {
+            if (1 == m_walkCycleCount || 3 == m_walkCycleCount)
+            {
+                m_hexapodState = m_hexapodDesiredState;
+
+                // if new state is another cycle keep cyclecount so we can fluently shift, otherwise zero cycle count
+                if (m_hexapodState == HexapodState::HOME || m_hexapodState == HexapodState::SLEEP)
+                {
+                    m_walkCycleCount = 0;
+                }
+            }
+        }
+    }
+
+    switch (m_hexapodState)
+    {
+    case HexapodState::SLEEP:
+        MoveKeyFrame(m_poses.Sleep);
+        break;
+
+    case HexapodState::HOME:
+        MoveKeyFrame(m_poses.Home);
+        break;
+
+    case HexapodState::WALKFORWARD:
+        switch (m_walkCycleCount)
+        {
+        case 0:
+            MoveKeyFrame(m_poses.W0);
+            break;
+        case 1:
+            MoveKeyFrame(m_poses.W1);
+            break;
+        case 2:
+            MoveKeyFrame(m_poses.W2);
+            break;
+        case 3:
+            MoveKeyFrame(m_poses.W3);
+            break;
+        }
+
+        m_walkCycleCount++;
+        if (m_walkCycleCount > 3)
+        {
+            m_walkCycleCount = 0;
+        }
+        break;
+    }
+}
+
+// Interpolate to calculate a sequence of movements that performs desired move
 void Interpolate()
 {
-    //Serial.println("InterpolationCount: " + String(m_interpolationCount));
+    // Serial.println("InterpolationCount: " + String(m_interpolationCount));
     if (m_interpolationCount < 0)
     {
         return;
     }
 
     float stepFactor = ((float)INTERPOLATIONS - (float)m_interpolationCount) / (float)INTERPOLATIONS; // Calculate step factor from 0 to 1
-    //Serial.println("StepFactor: " + String(stepFactor));
 
-    Position lFrontPosition = {m_currentKeyFrame.LFront.x + (m_targetKeyFrame.LFront.x - m_currentKeyFrame.LFront.x) * stepFactor,
-                               m_currentKeyFrame.LFront.y + (m_targetKeyFrame.LFront.y - m_currentKeyFrame.LFront.y) * stepFactor,
-                               m_currentKeyFrame.LFront.z + (m_targetKeyFrame.LFront.z - m_currentKeyFrame.LFront.z) * stepFactor};
-    m_LFront.setFootPosition(lFrontPosition, ROBOT_SPEED);
+    Position lFrontPosition = InterpolatePosition(m_currentKeyFrame.LFront, m_targetKeyFrame.LFront, stepFactor);
+    m_LFrontLeg.setFootPosition(lFrontPosition, ROBOT_SPEED);
 
-    Position lMiddlePosition = {m_currentKeyFrame.LMiddle.x + (m_targetKeyFrame.LMiddle.x - m_currentKeyFrame.LMiddle.x) * stepFactor,
-                                m_currentKeyFrame.LMiddle.y + (m_targetKeyFrame.LMiddle.y - m_currentKeyFrame.LMiddle.y) * stepFactor,
-                                m_currentKeyFrame.LMiddle.z + (m_targetKeyFrame.LMiddle.z - m_currentKeyFrame.LMiddle.z) * stepFactor};
-    m_LMiddle.setFootPosition(lMiddlePosition, ROBOT_SPEED);
-    //Serial.println("LMiddle: " + String(lMiddlePosition.x) + ", " + String(lMiddlePosition.y) + ", " + String(lMiddlePosition.z));
+    Position lMiddlePosition = InterpolatePosition(m_currentKeyFrame.LMiddle, m_targetKeyFrame.LMiddle, stepFactor);
+    m_LMiddleLeg.setFootPosition(lMiddlePosition, ROBOT_SPEED);
 
-    Position lBackPosition = {m_currentKeyFrame.LBack.x + (m_targetKeyFrame.LBack.x - m_currentKeyFrame.LBack.x) * stepFactor,
-                              m_currentKeyFrame.LBack.y + (m_targetKeyFrame.LBack.y - m_currentKeyFrame.LBack.y) * stepFactor,
-                              m_currentKeyFrame.LBack.z + (m_targetKeyFrame.LBack.z - m_currentKeyFrame.LBack.z) * stepFactor};
-    m_LBack.setFootPosition(lBackPosition, ROBOT_SPEED);
+    Position lBackPosition = InterpolatePosition(m_currentKeyFrame.LBack, m_targetKeyFrame.LBack, stepFactor);
+    m_LBackLeg.setFootPosition(lBackPosition, ROBOT_SPEED);
 
-    Position rFrontPosition = {m_currentKeyFrame.RFront.x + (m_targetKeyFrame.RFront.x - m_currentKeyFrame.RFront.x) * stepFactor,
-                               m_currentKeyFrame.RFront.y + (m_targetKeyFrame.RFront.y - m_currentKeyFrame.RFront.y) * stepFactor,
-                               m_currentKeyFrame.RFront.z + (m_targetKeyFrame.RFront.z - m_currentKeyFrame.RFront.z) * stepFactor};
-    m_RFront.setFootPosition(rFrontPosition, ROBOT_SPEED);
+    Position rFrontPosition = InterpolatePosition(m_currentKeyFrame.RFront, m_targetKeyFrame.RFront, stepFactor);
+    m_RFrontLeg.setFootPosition(rFrontPosition, ROBOT_SPEED);
 
-    Position rMiddlePosition = {m_currentKeyFrame.RMiddle.x + (m_targetKeyFrame.RMiddle.x - m_currentKeyFrame.RMiddle.x) * stepFactor,
-                                m_currentKeyFrame.RMiddle.y + (m_targetKeyFrame.RMiddle.y - m_currentKeyFrame.RMiddle.y) * stepFactor,
-                                m_currentKeyFrame.RMiddle.z + (m_targetKeyFrame.RMiddle.z - m_currentKeyFrame.RMiddle.z) * stepFactor};
-    m_RMiddle.setFootPosition(rMiddlePosition, ROBOT_SPEED);
+    Position rMiddlePosition = InterpolatePosition(m_currentKeyFrame.RMiddle, m_targetKeyFrame.RMiddle, stepFactor);
+    m_RMiddleLeg.setFootPosition(rMiddlePosition, ROBOT_SPEED);
 
-    Position rBackPosition = {m_currentKeyFrame.RBack.x + (m_targetKeyFrame.RBack.x - m_currentKeyFrame.RBack.x) * stepFactor,
-                              m_currentKeyFrame.RBack.y + (m_targetKeyFrame.RBack.y - m_currentKeyFrame.RBack.y) * stepFactor,
-                              m_currentKeyFrame.RBack.z + (m_targetKeyFrame.RBack.z - m_currentKeyFrame.RBack.z) * stepFactor};
-    m_RBack.setFootPosition(rBackPosition, ROBOT_SPEED);
-    // Commit all legs to write values to servos
-    CommitAllLegs();
-    m_interpolationCount--;
-    if (m_interpolationCount <= 0)
-    {
-        // Update current key frame to target key frame
-        m_currentKeyFrame = m_targetKeyFrame;
-    }
+    Position rBackPosition = InterpolatePosition(m_currentKeyFrame.RBack, m_targetKeyFrame.RBack, stepFactor);
+    m_RBackLeg.setFootPosition(rBackPosition, ROBOT_SPEED);
+}
+
+Position InterpolatePosition(Position originalPosition, Position targetPosition, float stepFactor)
+{
+    Position interpolatePosition = {originalPosition.x + (targetPosition.x - originalPosition.x) * stepFactor,
+                                    originalPosition.y + (targetPosition.y - originalPosition.y) * stepFactor,
+                                    originalPosition.z + (targetPosition.z - originalPosition.z) * stepFactor};
+    return interpolatePosition;
 }
 
 void ZeroAllLegs()
 {
     // Set all servos to zero angle
-    m_LFront.zeroAngles(ROBOT_SPEED);
-    m_LMiddle.zeroAngles(ROBOT_SPEED);
-    m_LBack.zeroAngles(ROBOT_SPEED);
-    m_RFront.zeroAngles(ROBOT_SPEED);
-    m_RMiddle.zeroAngles(ROBOT_SPEED);
-    m_RBack.zeroAngles(ROBOT_SPEED);
+    m_LFrontLeg.zeroAngles(ROBOT_SPEED);
+    m_LMiddleLeg.zeroAngles(ROBOT_SPEED);
+    m_LBackLeg.zeroAngles(ROBOT_SPEED);
+    m_RFrontLeg.zeroAngles(ROBOT_SPEED);
+    m_RMiddleLeg.zeroAngles(ROBOT_SPEED);
+    m_RBackLeg.zeroAngles(ROBOT_SPEED);
 
     // Commit all legs to write values to servos
     CommitAllLegs();
@@ -182,12 +237,12 @@ bool IsServosMoving()
 void CommitAllLegs()
 {
     // Write values to all servos of all legs
-    CommitLeg(m_LFront);
-    CommitLeg(m_LMiddle);
-    CommitLeg(m_LBack);
-    CommitLeg(m_RFront);
-    CommitLeg(m_RMiddle);
-    CommitLeg(m_RBack);
+    CommitLeg(m_LFrontLeg);
+    CommitLeg(m_LMiddleLeg);
+    CommitLeg(m_LBackLeg);
+    CommitLeg(m_RFrontLeg);
+    CommitLeg(m_RMiddleLeg);
+    CommitLeg(m_RBackLeg);
 }
 
 void CommitLeg(Leg &leg)
@@ -198,8 +253,8 @@ void CommitLeg(Leg &leg)
     CommitServo(leg.getFootServo());
 }
 
-void SetSpeed(){
-
+void SetSpeed()
+{
 }
 
 /// <summary>

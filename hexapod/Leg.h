@@ -55,7 +55,7 @@ public:
     /// @param footPosition vs body center in milimeters
     /// @param speed how fast the robot should move
     /// @return true if position is valid and set, false if position is illegal
-    bool setFootPosition(Position footPosition, int8_t speed);
+    bool setFootPosition(Position footPosition, uint8_t speed);
 
     void zeroAngles(uint8_t speed)
     {

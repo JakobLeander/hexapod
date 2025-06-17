@@ -42,7 +42,7 @@ Leg::Leg(LegId id, int16_t anchorX, int16_t anchorY)
     };
 }
 
-bool Leg::setFootPosition(Position footPosition, int8_t speed)
+bool Leg::setFootPosition(Position footPosition, uint8_t speed)
 {
     // TODO handle legs initial angle vs body
     // Serial.println("Anchor Position: x=" + String(m_anchorX) + ", y=" + String(m_anchorY) + ", z=" + String(m_anchorZ));

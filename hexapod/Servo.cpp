@@ -25,5 +25,5 @@ void Servo::setAngle(float angle)
 
 void Servo::setSpeed(uint8_t speed)
 {
-    m_speed = constrain(m_speed, MIN_SPEED, MAX_SPEED);
+    m_speed = constrain(speed, MIN_SPEED, MAX_SPEED);
 }

@@ -3,6 +3,7 @@
         "cstddef": "cpp",
         "initializer_list": "cpp",
         "xstring": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "istream": "cpp"
     }
 }
