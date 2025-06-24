@@ -2,9 +2,6 @@
 #include <PololuMaestro.h>
 // https://www.pololu.com/docs/0J40/5.e
 
-#define RX_PIN 10 // Pin that is connected to Maestro TX pin
-#define TX_PIN 11 // Pin that is connected to Maestro RX pin
-
 #define MAESTRO_SERVO_PIN 0 //
 
 #define m_MaestroSerial Serial2
