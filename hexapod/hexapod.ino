@@ -3,16 +3,26 @@
 #include "Poses.h"
 #include "KeyFrame.h"
 #include "Position.h"
-
 #include <PololuMaestro.h> // https://www.pololu.com/docs/0J40/5.e
-#include <SoftwareSerial.h>
-#define RX_PIN 10                      // Pin that is connected to Maestro TX pin
-#define TX_PIN 11                      // Pin that is connected to Maestro RX pin
-const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
-const uint8_t ROBOT_SPEED = 15;        // TODO: Make dynamic
 
-SoftwareSerial m_MaestroSerial(RX_PIN, TX_PIN);
+#define m_bluetoothSerial Serial1
+#define m_MaestroSerial Serial2
+
+const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
+const uint8_t ROBOT_SPEED = 0;        // TODO: Make dynamic
+
 MiniMaestro m_maestro(m_MaestroSerial);
+
+unsigned long m_lastCommand;           // Last time a command was received
+unsigned long m_lastPoll;           // Last time a command was received
+const unsigned long BREAK_TIME = 500; // Number of miliseconds to allow no commands before we break
+const unsigned long POLL_TIME = 0; // Number of miliseconds between bluetooth reads
+const char ACTION_NOTHING = 'N';       // Nothing
+const char ACTION_FORWARD = 'F';       // Walk forward
+const char ACTION_BACKWARD = 'B';      // Walk backward
+const char ACTION_RIGHT = 'R';         // Rotate right
+const char ACTION_LEFT = 'L';          // Rotate left
+
 Poses m_poses;
 
 enum HexapodState
@@ -43,52 +53,83 @@ const int8_t INTERPOLATIONS = 5;
 int8_t m_interpolationCount = -1;
 uint8_t m_walkCycleCount = 0;
 
-char btCommand = '\0';
-
 HexapodState m_hexapodState = HexapodState::SLEEP;
 HexapodState m_hexapodDesiredState = HexapodState::SLEEP;
 
 void setup()
 {
     Serial.begin(115200);
+    delay(1000);
+    m_bluetoothSerial.begin(9600);
+    delay(1000);
     m_MaestroSerial.begin(115200);
     delay(1000);
-
+    m_lastCommand = millis();
+    m_lastPoll = millis();
     Serial.println("Ready!");
 }
 
 void loop()
 {
-    if (Serial.available() > 0)
+    byte action = ACTION_NOTHING;
+    byte actionValue = 0;
+
+    // If no request to move for a while, stop moving unless we are in sleep or home state
+    if ((millis() - m_lastCommand) > BREAK_TIME)
     {
-        btCommand = Serial.read();
-        Serial.println("Received command: " + String(btCommand));
+        if (m_hexapodState != HexapodState::SLEEP)
+        {
+            m_hexapodDesiredState = HexapodState::HOME;
+        }
+
+        m_lastCommand = millis();
     }
 
-    if (btCommand == 'H')
+    // See if there are any new bluetooth commands
+    if ((millis() - m_lastPoll) > POLL_TIME)
+    {
+        ReadBluetoothCommand(action, actionValue);
+        m_lastPoll = millis();
+    }
+    
+
+    // If action
+    if (action != ACTION_NOTHING)
+    {
+        Serial.print("BTCMD: ");
+        Serial.print(char(action));
+        Serial.print("[");
+        Serial.print(actionValue);
+        Serial.println("]");
+        m_lastCommand = millis();
+    }
+
+    // TODO: Use the speed value (actionValue) to set the speed of the robot
+
+    if (action == 'H')
     {
         m_hexapodDesiredState = HexapodState::HOME;
     }
 
-    if (btCommand == 'S')
+    if (action == 'S')
     {
         m_hexapodDesiredState = HexapodState::SLEEP;
     }
 
-    if (btCommand == 'F')
+    if (action == 'F')
     {
         m_hexapodDesiredState = HexapodState::WALKFORWARD;
     }
-    if (btCommand == 'B')
+    if (action == 'B')
     {
         m_hexapodDesiredState = HexapodState::WALKBACKWARD;
     }
-    if (btCommand == 'L')
+    if (action == 'L')
     {
         m_hexapodDesiredState = HexapodState::ROTATELEFT;
     }
 
-    if (btCommand == 'R')
+    if (action == 'R')
     {
         m_hexapodDesiredState = HexapodState::ROTATERIGHT;
     }
@@ -121,10 +162,18 @@ void DetermineNextMove()
     if (m_hexapodDesiredState != m_hexapodState)
     {
         // for some states just do the change no danger
-        if (m_hexapodState == HexapodState::HOME || m_hexapodState == HexapodState::SLEEP)
+        if (m_hexapodState == HexapodState::HOME)
         {
             m_hexapodState = m_hexapodDesiredState;
             m_walkCycleCount = 0;
+            MoveKeyFrame(m_poses.Home);
+        }
+
+        if ( m_hexapodState == HexapodState::SLEEP)
+        {
+            m_hexapodState = m_hexapodDesiredState;
+            m_walkCycleCount = 0;
+            MoveKeyFrame(m_poses.Sleep);
         }
 
         // For gait state only allow changes when legs are in middle position
@@ -146,14 +195,6 @@ void DetermineNextMove()
 
     switch (m_hexapodState)
     {
-    case HexapodState::SLEEP:
-        MoveKeyFrame(m_poses.Sleep);
-        break;
-
-    case HexapodState::HOME:
-        MoveKeyFrame(m_poses.Home);
-        break;
-
     case HexapodState::WALKFORWARD:
         switch (m_walkCycleCount)
         {
@@ -288,20 +329,6 @@ Position InterpolatePosition(Position originalPosition, Position targetPosition,
     return interpolatePosition;
 }
 
-void ZeroAllLegs()
-{
-    // Set all servos to zero angle
-    m_LFrontLeg.zeroAngles(ROBOT_SPEED);
-    m_LMiddleLeg.zeroAngles(ROBOT_SPEED);
-    m_LBackLeg.zeroAngles(ROBOT_SPEED);
-    m_RFrontLeg.zeroAngles(ROBOT_SPEED);
-    m_RMiddleLeg.zeroAngles(ROBOT_SPEED);
-    m_RBackLeg.zeroAngles(ROBOT_SPEED);
-
-    // Commit all legs to write values to servos
-    CommitAllLegs();
-}
-
 void MoveKeyFrame(KeyFrame keyFrame)
 {
     m_targetKeyFrame = keyFrame;
@@ -348,28 +375,70 @@ void SetSpeed()
 /// <param name="srv">Servo to write</param>
 void CommitServo(Servo servo)
 {
-    /*
-    // during testing print values
-    Serial.print(servo.getId() + ": ");
+    Serial.println("Test");
 
-    Serial.print(": CH=" + (String)servo.getPololuChannel());
-
-    if (servo.isReverse())
-    {
-        Serial.print(" REV=Y");
-    }
-    else
-    {
-        Serial.print(" REV=N");
-    }
-
-    Serial.print(" SPD=" + (String)servo.getTargetSpeed());
-    Serial.print(" ANG=");
-    Serial.print((String)servo.getTargetAngle());
-    Serial.println(" PW=" + (String)servo.getTargetPosition());
-    */
+    // TODO: Convert servo speed (0-100) to maestro speed
     m_maestro.setSpeed(servo.getPololuChannel(), servo.getTargetSpeed());
     m_maestro.setAcceleration(servo.getPololuChannel(), SERVO_ACCELERATION);
     uint16_t pololuPulseWidthTarget = servo.getTargetPosition() * 4;
     m_maestro.setTarget(servo.getPololuChannel(), pololuPulseWidthTarget);
+}
+
+/*
+ * Function:  Read bluetooth command
+ * --------------------
+ * Read bluetooth command from the HC-06 one character at a time
+ * Identify a comand starting with '{' and ending with '}'
+ *
+ * I have included this so you can see how to do advanced serial communication
+ * with a robot
+ * Static variables are preserved between calls
+ */
+void ReadBluetoothCommand(byte &action, byte &actionValue)
+{
+    const char startMarker = '[';
+    const char endMarker = ']';
+    const byte bufferLength = 2;
+    char c;
+    static byte index = 0;
+    static boolean recieveInProgress = false;
+    static char buffer[bufferLength];
+
+    action = ACTION_NOTHING;
+    actionValue = 0;
+
+    if (m_bluetoothSerial.available())
+    {
+        c = m_bluetoothSerial.read();
+        Serial.println(char(c));
+
+        // If we are starting a new command
+        if (c == startMarker)
+        {
+            recieveInProgress = true;
+            index = 0;
+            return;
+        }
+
+        if (true == recieveInProgress)
+        {
+            // If we recieve end marker
+            if (c == endMarker && index == bufferLength)
+            {
+                recieveInProgress = false;
+                index = 0;
+                action = buffer[0];
+                actionValue = buffer[1] - '0';
+            }
+            else
+            {
+                if (index >= bufferLength)
+                {
+                    index = bufferLength - 1;
+                }
+                buffer[index] = c;
+                index++;
+            }
+        }
+    }
 }

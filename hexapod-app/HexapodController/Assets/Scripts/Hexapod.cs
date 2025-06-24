@@ -15,7 +15,6 @@ public class Hexapod : MonoBehaviour
 
     private DebugWindow _debugWindow;
     private BluetoothManager _bluetoothManager;
-    private float repeatFrequency = 0.1f;
     private const int TIMES_PER_SECOND_TO_SUBMIT_JOYSTICK_DATA = 4;
     private int _submitJoystickDataCounter = 50 / TIMES_PER_SECOND_TO_SUBMIT_JOYSTICK_DATA;
 
@@ -43,8 +42,8 @@ public class Hexapod : MonoBehaviour
         }
 
         // Show joystick values
-       _moveJoystickText.text = "" + _moveJoystick.Direction + "";
-       _positionJoystickText.text = "" + _positionJoystick.Direction + "";
+        _moveJoystickText.text = "" + _moveJoystick.Direction + "";
+        _positionJoystickText.text = "" + _positionJoystick.Direction + "";
     }
 
     //  Called 50 times per second
@@ -52,17 +51,36 @@ public class Hexapod : MonoBehaviour
     {
         if (_submitJoystickDataCounter <= 0)
         {
-            int moveX = (int)(_moveJoystick.Direction.x * 100);
-            int moveY = (int)(_moveJoystick.Direction.y * 100);
-            int positionX = (int)(_positionJoystick.Direction.x * 100);
-            int positionY = (int)(_positionJoystick.Direction.y * 100);
-
-            // only send data if joystick are moved
-            if (moveX!=0 || moveY!=0||positionX!=0||positionY!=0){
-                string command = string.Format("J{0},{1},{2},{3}",moveX,moveY,positionX,positionY);
-                _debugWindow.LogButtonPress(command);
-
+            // Move is a value from 0 to 9
+            int moveY = (int)(_moveJoystick.Direction.y * 9);
+            int positionX = (int)(_positionJoystick.Direction.x * 9);
+            string command = "";
+            if (moveY > 0)
+            {
+                command = string.Format("F{0}", moveY);
                 SendBluetoothData(command);
+                _debugWindow.LogButtonPress(command);
+            }
+
+            if (moveY < 0)
+            {
+                command = string.Format("B{0}", -moveY);
+                SendBluetoothData(command);
+                _debugWindow.LogButtonPress(command);
+            }
+            
+            if (positionX > 0)
+            {
+                command = string.Format("R{0}", positionX);
+                SendBluetoothData(command);
+                _debugWindow.LogButtonPress(command);
+            }
+
+            if (positionX < 0)
+            {
+                command = string.Format("L{0}", -positionX);
+                SendBluetoothData(command);
+                _debugWindow.LogButtonPress(command);
             }
 
             _submitJoystickDataCounter = 50 / TIMES_PER_SECOND_TO_SUBMIT_JOYSTICK_DATA;
@@ -77,26 +95,20 @@ public class Hexapod : MonoBehaviour
 
     public void HeightSliderChanged()
     {
-        int height = (int)(Mathf.Clamp(_heightSlider.value,0,100));
+        int height = (int)(Mathf.Clamp(_heightSlider.value, 0, 100));
         _debugWindow.LogButtonPress("Height: " + height);
         SendBluetoothData("H" + height);
     }
-
-    public void CommandButtonHandler(string command)
-    {
-        _debugWindow.LogButtonPress("Button Press: " + command);
-        SendBluetoothData(command);
-    }
-
+    
     public void SleepButtonHandler()
     {
         _debugWindow.LogButtonPress("Button Press: Sleep");
 
-        SendBluetoothData("S");
-        
+        SendBluetoothData("S0");
+
     }
 
-    private void SendBluetoothData(string data )
+    private void SendBluetoothData(string data)
     {
         if (_bluetoothManager.GetState() == BluetoothManager.BluetoothState.Connected)
         {

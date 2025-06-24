@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: Sparkz
-  productName: Hexapod Controller
+  productName: HexapodController
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -163,7 +163,7 @@ PlayerSettings:
   androidMaxAspectRatio: 2.1
   androidMinAspectRatio: 1
   applicationIdentifier:
-    Android: com.Sparkz.BDXController
+    Android: com.Sparkz.HexapodController
     Standalone: com.Sparkz.R2D2Controller
   buildNumber:
     Standalone: 0

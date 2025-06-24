@@ -509,9 +509,9 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1687614347}
   m_Direction: 2
   m_MinValue: 0
-  m_MaxValue: 100
+  m_MaxValue: 9
   m_WholeNumbers: 1
-  m_Value: 50
+  m_Value: 5
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -1308,7 +1308,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -5949842431738618408, guid: 44388a867ba12214db234f4f3f939574, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 44388a867ba12214db234f4f3f939574, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1945,6 +1945,10 @@ PrefabInstance:
     - target: {fileID: 2929252283123773939, guid: aaa2c939c0359ac4dbce3f49e8b90252, type: 3}
       propertyPath: m_Name
       value: MoveJoystick
+      objectReference: {fileID: 0}
+    - target: {fileID: 2929252283123773951, guid: aaa2c939c0359ac4dbce3f49e8b90252, type: 3}
+      propertyPath: axisOptions
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2929252285020697096, guid: aaa2c939c0359ac4dbce3f49e8b90252, type: 3}
       propertyPath: m_SizeDelta.x

@@ -67,10 +67,10 @@ public class BluetoothManager : MonoBehaviour
         _debugWindow.LogBluetooth("Disconnected");
     }
 
-    public void sendData(string d)
+    public void sendData(string data)
     {
         // add start and end marker to the package
         // So we can safely decode on arduino
-        _btHelper.SendData("[" + d +  "]");
+        _btHelper.SendData("[" + data +  "]");
     }
 }
