@@ -6,15 +6,11 @@
   2025-06-17 Jakob Leander
 */
 
-#include <SoftwareSerial.h>
 #include <Servo.h>
 
-// Define the pins on the Arduino
-#define RX_PIN 2 // Pin that is connected to BT TX pin
-#define TX_PIN 3 // Pin that is connected to BT RX pin
+#define m_bluetoothSerial Serial1
 
 // Global variables
-SoftwareSerial m_bluetoothSerial(RX_PIN, TX_PIN);
 unsigned long m_lastCommand;           // Last time a command was received
 const unsigned long BREAK_TIME = 5000; // Number of miliseconds to allow no commands before we break
 const char ACTION_NOTHING = 'N';       // Drive command

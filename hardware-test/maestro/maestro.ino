@@ -7,8 +7,7 @@
 
 #define MAESTRO_SERVO_PIN 0 //
 
-#include <SoftwareSerial.h>
-SoftwareSerial maestroSerial(RX_PIN, TX_PIN);
+#define m_MaestroSerial Serial2
 
 MiniMaestro maestro(maestroSerial);
 
