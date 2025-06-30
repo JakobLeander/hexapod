@@ -44,64 +44,44 @@ Leg::Leg(LegId id, int16_t anchorX, int16_t anchorY)
 
 bool Leg::setFootPosition(Position footPosition, uint8_t speed)
 {
-    // TODO handle legs initial angle vs body
-    // Serial.println("Anchor Position: x=" + String(m_anchorX) + ", y=" + String(m_anchorY) + ", z=" + String(m_anchorZ));
-
-    // Serial.println("Foot position vs body: x=" + String(footPosX) + ", y=" + String(footPosY) + ", z=" + String(footPosZ));
-
     // Calculate foot position relative to anchor
     float x = footPosition.x - m_anchorX; // X coordinate relative to anchor
     float y = footPosition.y - m_anchorY; // Y coordinate relative to anchor
     float z = footPosition.z - m_anchorZ; // Z coordinate relative to anchor
-    // Serial.println("Foot position vs anchor: x=" + String(x) + ", y=" + String(y) + ", z=" + String(z));
 
     // Angle to turn hip vs x axis
     float hipAngleDeg = atan2(y, x) * 180.0 / M_PI;
 
     // Calculate servo angle
     hipAngleDeg -= m_anchorAngleDeg;
-    // Serial.println("anchorAngleDeg: " + String(m_anchorAngleDeg));
-    // Serial.println("hipAngleDeg: " + String(hipAngleDeg));
 
     // Since knee joint is origo for rest of calculation calculate its position
     // it is closer to foot than hip joint
     float len = sqrt(sq(x) + sq(y));
     float kneeOffsetX = x * HIP_TO_KNEE_LENGTH / len;
     float kneeOffsetY = y * HIP_TO_KNEE_LENGTH / len;
-    // Serial.println("Knee offset: x=" + String(kneeOffsetX) + ", y=" + String(kneeOffsetY));
     float kneePosX = m_anchorX + kneeOffsetX;
     float kneePosY = m_anchorY + kneeOffsetY;
-    // Serial.println("Knee pos: x=" + String(kneePosX) + ", y=" + String(kneePosY));
 
     // Calculate foot pos vs knee joint
     x = footPosition.x - kneePosX;
     y = footPosition.y - kneePosY;
-    // Serial.println("Foot position vs knee joint: x=" + String(x) + ", y=" + String(y) + ", z=" + String(z));
 
     // Calculate angles for knee and foot servos
     float h = sqrt(sq(x) + sq(y));
-    // Serial.println("h: " + String(h));
-
     float l = sqrt(sq(h) + sq(z));
-    // Serial.println("l: " + String(l));
-
     float footAngleDeg = acos((sq(THIGH_LENGTH) + sq(FOOT_LENGTH) - sq(l)) / (2 * THIGH_LENGTH * FOOT_LENGTH)) * RAD2DEG;
 
     // Since servo is calibrated to 0 when angle is 90 degree subtract  90 degree
     footAngleDeg = footAngleDeg - 90;
-    // Serial.println("footAngleDeg: " + String(footAngleDeg));
 
     // Foot position is not below servo when at sero so subtract some degrees to make it so
     footAngleDeg = footAngleDeg - 14.0; //
 
     float vB = acos((sq(l) + sq(THIGH_LENGTH) - sq(FOOT_LENGTH)) / (2 * l * THIGH_LENGTH));
-    // Serial.println("vB: " + String(vB * RAD2DEG));
 
     float vA = atan2(z, h);
-    // Serial.println(" vA: " + String(vA * RAD2DEG));
-
     float kneeAngleDeg = (vB + vA) * RAD2DEG;
-    // Serial.println("kneeAngleDeg: " + String(kneeAngleDeg));
 
     // Save current angles
     float hipCurrentAngle = m_hipServo.getTargetAngle();
@@ -123,7 +103,6 @@ bool Leg::setFootPosition(Position footPosition, uint8_t speed)
     m_hipServo.setSpeed(speed);
     m_kneeServo.setSpeed(speed);
     m_footServo.setSpeed(speed);
-    // Serial.println("speeds: hip=" + String(hipSpeed) + ", knee=" + String(kneeSpeed) + ", foot=" + String(footSpeed));
 
     m_footPositionX = footPosition.x;
     m_footPositionY = footPosition.y;
