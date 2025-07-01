@@ -17,8 +17,6 @@ When all is working you can upload the full application in the hexapod folder to
 # To control the robot
 You can control the robot from a bluetooth device (not IOS) that can send serial commands.
 
-You can use the unity app in the hexapod-app folder if you want
-
 To move the robot you send serial commands. The commands are in the format a character followed by a single digit.
 
 The commands must be wrapped by [] to reduce risk of corrupted commands
@@ -30,3 +28,13 @@ The commands must be wrapped by [] to reduce risk of corrupted commands
 - '(R#)' = Rotate Right
 
 The digits are not currently used but can later be used to control speed or size of steps.
+
+# Unity App
+You can use the unity app in the hexapod-app folder if you want
+
+![image](media/unity.png)
+
+It does not work on IoS devices as HC06 module is not compatible with IoS.
+
+I have used a paid 3-party component to handle low-level bluetooth communication, well worth it.
+
