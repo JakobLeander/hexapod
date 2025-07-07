@@ -9,7 +9,7 @@
 #define m_MaestroSerial Serial2
 
 const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
-const uint8_t ROBOT_SPEED = 0;         // TODO: Make dynamic
+const uint8_t ROBOT_SPEED = 20;         // TODO: Make dynamic
 
 MiniMaestro m_maestro(m_MaestroSerial);
 
