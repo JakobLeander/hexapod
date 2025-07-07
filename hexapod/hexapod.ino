@@ -9,19 +9,19 @@
 #define m_MaestroSerial Serial2
 
 const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
-const uint8_t ROBOT_SPEED = 0;        // TODO: Make dynamic
+const uint8_t ROBOT_SPEED = 0;         // TODO: Make dynamic
 
 MiniMaestro m_maestro(m_MaestroSerial);
 
-unsigned long m_lastCommand;           // Last time a command was received
-unsigned long m_lastPoll;           // Last time a command was received
+unsigned long m_lastCommand;          // Last time a command was received
+unsigned long m_lastPoll;             // Last time a command was received
 const unsigned long BREAK_TIME = 500; // Number of miliseconds to allow no commands before we break
-const unsigned long POLL_TIME = 0; // Number of miliseconds between bluetooth reads
-const char ACTION_NOTHING = 'N';       // Nothing
-const char ACTION_FORWARD = 'F';       // Walk forward
-const char ACTION_BACKWARD = 'B';      // Walk backward
-const char ACTION_RIGHT = 'R';         // Rotate right
-const char ACTION_LEFT = 'L';          // Rotate left
+const unsigned long POLL_TIME = 0;    // Number of miliseconds between bluetooth reads
+const char ACTION_NOTHING = 'N';      // Nothing
+const char ACTION_FORWARD = 'F';      // Walk forward
+const char ACTION_BACKWARD = 'B';     // Walk backward
+const char ACTION_RIGHT = 'R';        // Rotate right
+const char ACTION_LEFT = 'L';         // Rotate left
 
 Poses m_poses;
 
@@ -43,9 +43,6 @@ Leg m_RFrontLeg(LegId::RFRONT, 74, -39);
 Leg m_RMiddleLeg(LegId::RMIDDLE, 0, -64);
 Leg m_RBackLeg(LegId::RBACK, -74, -39);
 
-KeyFrame m_currentKeyFrame = {m_poses.Home};
-KeyFrame m_targetKeyFrame = {m_poses.Home};
-
 // TODO: Make dynamic
 // Since our body center is higher than joint it cannot be zero
 int16_t ROBOT_HEIGHT = 127; // Desired height of the robot body above floor in millimeters
@@ -55,6 +52,12 @@ uint8_t m_walkCycleCount = 0;
 
 HexapodState m_hexapodState = HexapodState::SLEEP;
 HexapodState m_hexapodDesiredState = HexapodState::SLEEP;
+uint8_t m_hexapod_height = 5;         // 0 to 9
+uint8_t m_hexapod_desired_height = 5; // 0 to 9
+
+KeyFrame m_currentKeyFrame = {m_poses.Home(m_hexapod_height)};
+KeyFrame m_targetKeyFrame = {m_poses.Home(m_hexapod_height)};
+
 
 void setup()
 {
@@ -91,7 +94,6 @@ void loop()
         ReadBluetoothCommand(action, actionValue);
         m_lastPoll = millis();
     }
-    
 
     // If action
     if (action != ACTION_NOTHING)
@@ -106,29 +108,44 @@ void loop()
 
     // TODO: Use the speed value (actionValue) to set the speed of the robot
 
+    // Height change
+    if (action == 'Z')
+    {
+        m_hexapod_desired_height = actionValue;
+        Serial.print(m_hexapod_desired_height);
+    }
+
+    // Home
     if (action == 'H')
     {
         m_hexapodDesiredState = HexapodState::HOME;
     }
 
+    // Sleep
     if (action == 'S')
     {
         m_hexapodDesiredState = HexapodState::SLEEP;
     }
 
+    // Forward
     if (action == 'F')
     {
         m_hexapodDesiredState = HexapodState::WALKFORWARD;
     }
+
+    // Backward
     if (action == 'B')
     {
         m_hexapodDesiredState = HexapodState::WALKBACKWARD;
     }
+
+    // Rotate left
     if (action == 'L')
     {
         m_hexapodDesiredState = HexapodState::ROTATELEFT;
     }
 
+    // Rotate right
     if (action == 'R')
     {
         m_hexapodDesiredState = HexapodState::ROTATERIGHT;
@@ -159,17 +176,19 @@ void loop()
 void DetermineNextMove()
 {
     // Trigger a state change if requested
-    if (m_hexapodDesiredState != m_hexapodState)
+    if (m_hexapodDesiredState != m_hexapodState || m_hexapod_desired_height != m_hexapod_height)
     {
+        m_hexapod_height = m_hexapod_desired_height;
+
         // for some states just do the change no danger
-        if (m_hexapodState == HexapodState::HOME)
+        if (m_hexapodDesiredState == HexapodState::HOME)
         {
             m_hexapodState = m_hexapodDesiredState;
             m_walkCycleCount = 0;
-            MoveKeyFrame(m_poses.Home);
+            MoveKeyFrame(m_poses.Home(m_hexapod_height));
         }
 
-        if ( m_hexapodState == HexapodState::SLEEP)
+        if (m_hexapodDesiredState == HexapodState::SLEEP)
         {
             m_hexapodState = m_hexapodDesiredState;
             m_walkCycleCount = 0;
@@ -178,17 +197,19 @@ void DetermineNextMove()
 
         // For gait state only allow changes when legs are in middle position
         // To check for completion of cycle 0 or 2 we look for cycle 1 or 3
-        if (m_hexapodState == HexapodState::WALKFORWARD || m_hexapodState == HexapodState::WALKBACKWARD || m_hexapodState == HexapodState::ROTATELEFT || m_hexapodState == HexapodState::ROTATERIGHT)
+        if (m_hexapodDesiredState == HexapodState::WALKFORWARD || m_hexapodDesiredState == HexapodState::WALKBACKWARD || m_hexapodDesiredState == HexapodState::ROTATELEFT || m_hexapodDesiredState == HexapodState::ROTATERIGHT)
         {
+
+            if (m_hexapodState == HexapodState::SLEEP || m_hexapodState == HexapodState::HOME)
+            {
+                m_hexapodState = m_hexapodDesiredState;
+            }
+
+            Serial.println("walk");
+
             if (1 == m_walkCycleCount || 3 == m_walkCycleCount)
             {
                 m_hexapodState = m_hexapodDesiredState;
-
-                // if new state is another cycle keep cyclecount so we can fluently shift, otherwise zero cycle count
-                if (m_hexapodState == HexapodState::HOME || m_hexapodState == HexapodState::SLEEP)
-                {
-                    m_walkCycleCount = 0;
-                }
             }
         }
     }
@@ -199,16 +220,16 @@ void DetermineNextMove()
         switch (m_walkCycleCount)
         {
         case 0:
-            MoveKeyFrame(m_poses.W0);
+            MoveKeyFrame(m_poses.W0(m_hexapod_height));
             break;
         case 1:
-            MoveKeyFrame(m_poses.W1);
+            MoveKeyFrame(m_poses.W1(m_hexapod_height));
             break;
         case 2:
-            MoveKeyFrame(m_poses.W2);
+            MoveKeyFrame(m_poses.W2(m_hexapod_height));
             break;
         case 3:
-            MoveKeyFrame(m_poses.W3);
+            MoveKeyFrame(m_poses.W3(m_hexapod_height));
             break;
         }
 
@@ -222,16 +243,16 @@ void DetermineNextMove()
         switch (m_walkCycleCount)
         {
         case 0:
-            MoveKeyFrame(m_poses.W0);
+            MoveKeyFrame(m_poses.W0(m_hexapod_height));
             break;
         case 1:
-            MoveKeyFrame(m_poses.W3);
+            MoveKeyFrame(m_poses.W3(m_hexapod_height));
             break;
         case 2:
-            MoveKeyFrame(m_poses.W2);
+            MoveKeyFrame(m_poses.W2(m_hexapod_height));
             break;
         case 3:
-            MoveKeyFrame(m_poses.W1);
+            MoveKeyFrame(m_poses.W1(m_hexapod_height));
             break;
         }
 
@@ -375,7 +396,7 @@ void SetSpeed()
 /// <param name="srv">Servo to write</param>
 void CommitServo(Servo servo)
 {
-    Serial.println("Test");
+    // Serial.println("SetServo");
 
     // TODO: Convert servo speed (0-100) to maestro speed
     m_maestro.setSpeed(servo.getPololuChannel(), servo.getTargetSpeed());
@@ -410,7 +431,6 @@ void ReadBluetoothCommand(byte &action, byte &actionValue)
     if (m_bluetoothSerial.available())
     {
         c = m_bluetoothSerial.read();
-        Serial.println(char(c));
 
         // If we are starting a new command
         if (c == startMarker)

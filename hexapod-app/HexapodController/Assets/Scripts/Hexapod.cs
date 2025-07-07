@@ -95,9 +95,9 @@ public class Hexapod : MonoBehaviour
 
     public void HeightSliderChanged()
     {
-        int height = (int)(Mathf.Clamp(_heightSlider.value, 0, 100));
+        int height = (int)(Mathf.Clamp(_heightSlider.value, 0, 9));
         _debugWindow.LogButtonPress("Height: " + height);
-        SendBluetoothData("H" + height);
+        SendBluetoothData("Z" + height);
     }
     
     public void SleepButtonHandler()
@@ -107,7 +107,13 @@ public class Hexapod : MonoBehaviour
         SendBluetoothData("S0");
 
     }
+    public void HomeButtonHandler()
+    {
+        _debugWindow.LogButtonPress("Button Press: Home");
 
+        SendBluetoothData("H0");
+
+    }
     private void SendBluetoothData(string data)
     {
         if (_bluetoothManager.GetState() == BluetoothManager.BluetoothState.Connected)
