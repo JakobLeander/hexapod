@@ -9,7 +9,7 @@
 #define m_MaestroSerial Serial2
 
 const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
-const uint8_t ROBOT_SPEED = 20;         // TODO: Make dynamic
+const uint8_t ROBOT_SPEED = 20;        // TODO: Make dynamic
 
 MiniMaestro m_maestro(m_MaestroSerial);
 
@@ -57,7 +57,6 @@ uint8_t m_hexapod_desired_height = 5; // 0 to 9
 
 KeyFrame m_currentKeyFrame = {m_poses.Home(m_hexapod_height)};
 KeyFrame m_targetKeyFrame = {m_poses.Home(m_hexapod_height)};
-
 
 void setup()
 {
@@ -180,33 +179,23 @@ void DetermineNextMove()
     {
         m_hexapod_height = m_hexapod_desired_height;
 
-        // for some states just do the change no danger
-        if (m_hexapodDesiredState == HexapodState::HOME)
+        // for some states HOME & Sleep just do the change no danger
+        if (m_hexapodState == HexapodState::HOME)
         {
             m_hexapodState = m_hexapodDesiredState;
             m_walkCycleCount = 0;
-            MoveKeyFrame(m_poses.Home(m_hexapod_height));
         }
 
-        if (m_hexapodDesiredState == HexapodState::SLEEP)
+        if (m_hexapodState == HexapodState::SLEEP)
         {
             m_hexapodState = m_hexapodDesiredState;
             m_walkCycleCount = 0;
-            MoveKeyFrame(m_poses.Sleep);
         }
 
         // For gait state only allow changes when legs are in middle position
         // To check for completion of cycle 0 or 2 we look for cycle 1 or 3
-        if (m_hexapodDesiredState == HexapodState::WALKFORWARD || m_hexapodDesiredState == HexapodState::WALKBACKWARD || m_hexapodDesiredState == HexapodState::ROTATELEFT || m_hexapodDesiredState == HexapodState::ROTATERIGHT)
+        if (m_hexapodState == HexapodState::WALKFORWARD || m_hexapodState == HexapodState::WALKBACKWARD || m_hexapodState == HexapodState::ROTATELEFT || m_hexapodState == HexapodState::ROTATERIGHT)
         {
-
-            if (m_hexapodState == HexapodState::SLEEP || m_hexapodState == HexapodState::HOME)
-            {
-                m_hexapodState = m_hexapodDesiredState;
-            }
-
-            Serial.println("walk");
-
             if (1 == m_walkCycleCount || 3 == m_walkCycleCount)
             {
                 m_hexapodState = m_hexapodDesiredState;
@@ -216,6 +205,13 @@ void DetermineNextMove()
 
     switch (m_hexapodState)
     {
+    case HexapodState::HOME:
+        MoveKeyFrame(m_poses.Home(m_hexapod_height));
+        break;
+    case HexapodState::SLEEP:
+        MoveKeyFrame(m_poses.Sleep);
+        break;
+
     case HexapodState::WALKFORWARD:
         switch (m_walkCycleCount)
         {
