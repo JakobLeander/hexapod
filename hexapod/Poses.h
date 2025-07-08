@@ -88,33 +88,60 @@ public:
             .RBack = {-FOOT_FB_DISTANCE + FOOT_WALK_X, -FOOT_WIDTH_FB, foot_home_height}};
         return frame;
     }
-    KeyFrame R0{
-        .LFront = {FOOT_FB_DISTANCE, FOOT_WIDTH_FB, FOOT_UP_HEIGHT},
-        .LMiddle = {0, FOOT_WIDTH_M, FOOT_HOME_HEIGHT},
-        .LBack = {-FOOT_FB_DISTANCE, FOOT_WIDTH_FB, FOOT_UP_HEIGHT},
-        .RFront = {FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .RMiddle = {0, -FOOT_WIDTH_M, FOOT_UP_HEIGHT},
-        .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, FOOT_HOME_HEIGHT}};
-    KeyFrame R1{
-        .LFront = {FOOT_FB_DISTANCE - FOOT_WALK_X, FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .LMiddle = {0, FOOT_WIDTH_M, FOOT_HOME_HEIGHT},
-        .LBack = {-FOOT_FB_DISTANCE - FOOT_WALK_X, FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .RFront = {FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .RMiddle = {0 + FOOT_WALK_X, -FOOT_WIDTH_M, FOOT_HOME_HEIGHT},
-        .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, FOOT_HOME_HEIGHT}};
-    KeyFrame R2{
-        .LFront = {FOOT_FB_DISTANCE, FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .LMiddle = {0, FOOT_WIDTH_M, FOOT_UP_HEIGHT},
-        .LBack = {-FOOT_FB_DISTANCE, FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .RFront = {FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, FOOT_UP_HEIGHT},
-        .RMiddle = {0, -FOOT_WIDTH_M, FOOT_HOME_HEIGHT},
-        .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, FOOT_UP_HEIGHT}};
-    KeyFrame R3{
-        .LFront = {FOOT_FB_DISTANCE, FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .LMiddle = {0 - FOOT_WALK_X, FOOT_WIDTH_M, FOOT_HOME_HEIGHT},
-        .LBack = {-FOOT_FB_DISTANCE, FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .RFront = {FOOT_FB_DISTANCE + FOOT_WALK_X, -FOOT_WIDTH_FB, FOOT_HOME_HEIGHT},
-        .RMiddle = {0, -FOOT_WIDTH_M, FOOT_HOME_HEIGHT},
-        .RBack = {-FOOT_FB_DISTANCE + FOOT_WALK_X, -FOOT_WIDTH_FB, FOOT_HOME_HEIGHT}};
+    KeyFrame R0(uint8_t height)
+    {
+        int16_t foot_home_height = map(height, 0, 9, MIN_HOME_HEIGHT, MAX_HOME_HEIGHT);
+        int16_t foot_up_height = foot_home_height + 30;
+        KeyFrame frame{
+            .LFront = {FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_up_height},
+            .LMiddle = {0, FOOT_WIDTH_M, foot_home_height},
+            .LBack = {-FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_up_height},
+            .RFront = {FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height},
+            .RMiddle = {0, -FOOT_WIDTH_M, foot_up_height},
+            .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height}};
+        return frame;
+    }
+
+    KeyFrame R1(uint8_t height)
+    {
+        int16_t foot_home_height = map(height, 0, 9, MIN_HOME_HEIGHT, MAX_HOME_HEIGHT);
+        int16_t foot_up_height = foot_home_height + 30;
+        KeyFrame frame{
+            .LFront = {99, 167, foot_home_height},
+            .LMiddle = {0, FOOT_WIDTH_M, foot_home_height},
+            .LBack = {-183, 64, foot_home_height},
+            .RFront = {FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height},
+            .RMiddle = {61, -166, foot_home_height},
+            .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height}};
+        return frame;
+    }
+
+    KeyFrame R2(uint8_t height)
+    {
+        int16_t foot_home_height = map(height, 0, 9, MIN_HOME_HEIGHT, MAX_HOME_HEIGHT);
+        int16_t foot_up_height = foot_home_height + 30;
+        KeyFrame frame{
+            .LFront = {FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_home_height},
+            .LMiddle = {0, FOOT_WIDTH_M, foot_up_height},
+            .LBack = {-FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_home_height},
+            .RFront = {FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_up_height},
+            .RMiddle = {0, -FOOT_WIDTH_M, foot_home_height},
+            .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_up_height}};
+        return frame;
+    }
+
+    KeyFrame R3(uint8_t height)
+    {
+        int16_t foot_home_height = map(height, 0, 9, MIN_HOME_HEIGHT, MAX_HOME_HEIGHT);
+        int16_t foot_up_height = foot_home_height + 30;
+        KeyFrame frame{
+            .LFront = {FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_home_height},
+            .LMiddle = {-61, 166, foot_home_height},
+            .LBack = {-FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_home_height},
+            .RFront = {183, -64, foot_home_height},
+            .RMiddle = {0, -FOOT_WIDTH_M, foot_home_height},
+            .RBack = {-99, -167, foot_home_height}};
+        return frame;
+    }
 };
 #endif

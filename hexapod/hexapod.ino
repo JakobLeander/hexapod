@@ -9,7 +9,6 @@
 #define m_MaestroSerial Serial2
 
 const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
-const uint8_t ROBOT_SPEED = 20;        // TODO: Make dynamic
 
 MiniMaestro m_maestro(m_MaestroSerial);
 
@@ -43,12 +42,12 @@ Leg m_RFrontLeg(LegId::RFRONT, 74, -39);
 Leg m_RMiddleLeg(LegId::RMIDDLE, 0, -64);
 Leg m_RBackLeg(LegId::RBACK, -74, -39);
 
-// TODO: Make dynamic
 // Since our body center is higher than joint it cannot be zero
 int16_t ROBOT_HEIGHT = 127; // Desired height of the robot body above floor in millimeters
 const int8_t INTERPOLATIONS = 5;
 int8_t m_interpolationCount = -1;
 uint8_t m_walkCycleCount = 0;
+uint8_t m_robot_speed = 20;
 
 HexapodState m_hexapodState = HexapodState::SLEEP;
 HexapodState m_hexapodDesiredState = HexapodState::SLEEP;
@@ -130,24 +129,28 @@ void loop()
     if (action == 'F')
     {
         m_hexapodDesiredState = HexapodState::WALKFORWARD;
+        SetSpeed(actionValue);
     }
 
     // Backward
     if (action == 'B')
     {
         m_hexapodDesiredState = HexapodState::WALKBACKWARD;
+        SetSpeed(actionValue);
     }
 
     // Rotate left
     if (action == 'L')
     {
         m_hexapodDesiredState = HexapodState::ROTATELEFT;
+        SetSpeed(actionValue);
     }
 
     // Rotate right
     if (action == 'R')
     {
         m_hexapodDesiredState = HexapodState::ROTATERIGHT;
+        SetSpeed(actionValue);
     }
 
     // Do interpolation if we are in middle of a move
@@ -262,16 +265,16 @@ void DetermineNextMove()
         switch (m_walkCycleCount)
         {
         case 0:
-            MoveKeyFrame(m_poses.R0);
+            MoveKeyFrame(m_poses.R0(m_hexapod_height));
             break;
         case 1:
-            MoveKeyFrame(m_poses.R1);
+            MoveKeyFrame(m_poses.R1(m_hexapod_height));
             break;
         case 2:
-            MoveKeyFrame(m_poses.R2);
+            MoveKeyFrame(m_poses.R2(m_hexapod_height));
             break;
         case 3:
-            MoveKeyFrame(m_poses.R3);
+            MoveKeyFrame(m_poses.R3(m_hexapod_height));
             break;
         }
 
@@ -286,16 +289,16 @@ void DetermineNextMove()
         switch (m_walkCycleCount)
         {
         case 0:
-            MoveKeyFrame(m_poses.R0);
+            MoveKeyFrame(m_poses.R0(m_hexapod_height));
             break;
         case 1:
-            MoveKeyFrame(m_poses.R3);
+            MoveKeyFrame(m_poses.R3(m_hexapod_height));
             break;
         case 2:
-            MoveKeyFrame(m_poses.R2);
+            MoveKeyFrame(m_poses.R2(m_hexapod_height));
             break;
         case 3:
-            MoveKeyFrame(m_poses.R1);
+            MoveKeyFrame(m_poses.R1(m_hexapod_height));
             break;
         }
 
@@ -306,6 +309,11 @@ void DetermineNextMove()
         }
         break;
     }
+}
+
+void SetSpeed(uint8_t speed)
+{
+    m_robot_speed = map(speed, 0, 9, 20, 100);
 }
 
 // Interpolate to calculate a sequence of movements that performs desired move
@@ -320,22 +328,22 @@ void Interpolate()
     float stepFactor = ((float)INTERPOLATIONS - (float)m_interpolationCount) / (float)INTERPOLATIONS; // Calculate step factor from 0 to 1
 
     Position lFrontPosition = InterpolatePosition(m_currentKeyFrame.LFront, m_targetKeyFrame.LFront, stepFactor);
-    m_LFrontLeg.setFootPosition(lFrontPosition, ROBOT_SPEED);
+    m_LFrontLeg.setFootPosition(lFrontPosition, m_robot_speed);
 
     Position lMiddlePosition = InterpolatePosition(m_currentKeyFrame.LMiddle, m_targetKeyFrame.LMiddle, stepFactor);
-    m_LMiddleLeg.setFootPosition(lMiddlePosition, ROBOT_SPEED);
+    m_LMiddleLeg.setFootPosition(lMiddlePosition, m_robot_speed);
 
     Position lBackPosition = InterpolatePosition(m_currentKeyFrame.LBack, m_targetKeyFrame.LBack, stepFactor);
-    m_LBackLeg.setFootPosition(lBackPosition, ROBOT_SPEED);
+    m_LBackLeg.setFootPosition(lBackPosition, m_robot_speed);
 
     Position rFrontPosition = InterpolatePosition(m_currentKeyFrame.RFront, m_targetKeyFrame.RFront, stepFactor);
-    m_RFrontLeg.setFootPosition(rFrontPosition, ROBOT_SPEED);
+    m_RFrontLeg.setFootPosition(rFrontPosition, m_robot_speed);
 
     Position rMiddlePosition = InterpolatePosition(m_currentKeyFrame.RMiddle, m_targetKeyFrame.RMiddle, stepFactor);
-    m_RMiddleLeg.setFootPosition(rMiddlePosition, ROBOT_SPEED);
+    m_RMiddleLeg.setFootPosition(rMiddlePosition, m_robot_speed);
 
     Position rBackPosition = InterpolatePosition(m_currentKeyFrame.RBack, m_targetKeyFrame.RBack, stepFactor);
-    m_RBackLeg.setFootPosition(rBackPosition, ROBOT_SPEED);
+    m_RBackLeg.setFootPosition(rBackPosition, m_robot_speed);
 }
 
 Position InterpolatePosition(Position originalPosition, Position targetPosition, float stepFactor)
@@ -423,6 +431,7 @@ void ReadBluetoothCommand(byte &action, byte &actionValue)
 
     action = ACTION_NOTHING;
     actionValue = 0;
+    Serial.println("bt");
 
     if (m_bluetoothSerial.available())
     {
