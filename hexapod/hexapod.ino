@@ -12,15 +12,17 @@ const uint16_t SERVO_ACCELERATION = 0; // Unit is 1/4 microsecond
 
 MiniMaestro m_maestro(m_MaestroSerial);
 
-unsigned long m_lastCommand;          // Last time a command was received
-unsigned long m_lastPoll;             // Last time a command was received
-const unsigned long BREAK_TIME = 500; // Number of miliseconds to allow no commands before we break
-const unsigned long POLL_TIME = 0;    // Number of miliseconds between bluetooth reads
-const char ACTION_NOTHING = 'N';      // Nothing
-const char ACTION_FORWARD = 'F';      // Walk forward
-const char ACTION_BACKWARD = 'B';     // Walk backward
-const char ACTION_RIGHT = 'R';        // Rotate right
-const char ACTION_LEFT = 'L';         // Rotate left
+unsigned long m_lastCommand;                       // Last time a command was received
+unsigned long m_lastVoltageRead;                   // Last time a command was received
+unsigned long m_lastPoll;                          // Last time a command was received
+const unsigned long BREAK_TIME = 500;              // Number of miliseconds to allow no commands before we break
+const unsigned long VOLTAGE_READ_FREQUENCY = 5000; // Number of miliseconds between voltage reads
+const unsigned long POLL_TIME = 0;                 // Number of miliseconds between bluetooth reads
+const char ACTION_NOTHING = 'N';                   // Nothing
+const char ACTION_FORWARD = 'F';                   // Walk forward
+const char ACTION_BACKWARD = 'B';                  // Walk backward
+const char ACTION_RIGHT = 'R';                     // Rotate right
+const char ACTION_LEFT = 'L';                      // Rotate left
 
 Poses m_poses;
 
@@ -54,8 +56,8 @@ HexapodState m_hexapodDesiredState = HexapodState::SLEEP;
 uint8_t m_hexapod_height = 5;         // 0 to 9
 uint8_t m_hexapod_desired_height = 5; // 0 to 9
 
-KeyFrame m_currentKeyFrame = {m_poses.Home(m_hexapod_height)};
-KeyFrame m_targetKeyFrame = {m_poses.Home(m_hexapod_height)};
+KeyFrame m_currentKeyFrame = {m_poses.Sleep};
+KeyFrame m_targetKeyFrame = {m_poses.Sleep};
 
 void setup()
 {
@@ -66,7 +68,9 @@ void setup()
     m_MaestroSerial.begin(115200);
     delay(1000);
     m_lastCommand = millis();
+    m_lastVoltageRead = millis();
     m_lastPoll = millis();
+    CommitAcceleration();
     Serial.println("Ready!");
 }
 
@@ -84,6 +88,22 @@ void loop()
         }
 
         m_lastCommand = millis();
+    }
+
+    if ((millis() - m_lastVoltageRead) > VOLTAGE_READ_FREQUENCY)
+    {
+        int sensorValue = analogRead(A0);
+        // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
+        float voltage = sensorValue * (5.0 / 1023.0);
+
+        // Map voltage between 3.2 and 4.2 to a value between 0 and 9
+        int mapValue = (int)(voltage * 10);
+        mapValue = constrain(mapValue, 32, 42);
+        int submitValue = map(mapValue, 32, 42, 0, 9);
+        SendBluetoothBatteryLevel(submitValue);
+        Serial.println(voltage);
+
+        m_lastVoltageRead = millis();
     }
 
     // See if there are any new bluetooth commands
@@ -117,12 +137,14 @@ void loop()
     if (action == 'H')
     {
         m_hexapodDesiredState = HexapodState::HOME;
+        SetSpeed(0);
     }
 
     // Sleep
     if (action == 'S')
     {
         m_hexapodDesiredState = HexapodState::SLEEP;
+        SetSpeed(0);
     }
 
     // Forward
@@ -204,17 +226,20 @@ void DetermineNextMove()
                 m_hexapodState = m_hexapodDesiredState;
             }
         }
+        switch (m_hexapodState)
+        {
+        case HexapodState::HOME:
+            MoveKeyFrame(m_poses.Home(m_hexapod_height));
+            break;
+        case HexapodState::SLEEP:
+            MoveKeyFrame(m_poses.Sleep);
+            StopServos();
+            break;
+        }
     }
 
     switch (m_hexapodState)
     {
-    case HexapodState::HOME:
-        MoveKeyFrame(m_poses.Home(m_hexapod_height));
-        break;
-    case HexapodState::SLEEP:
-        MoveKeyFrame(m_poses.Sleep);
-        break;
-
     case HexapodState::WALKFORWARD:
         switch (m_walkCycleCount)
         {
@@ -313,6 +338,7 @@ void DetermineNextMove()
 
 void SetSpeed(uint8_t speed)
 {
+    uint8_t current_speed = m_robot_speed;
     m_robot_speed = map(speed, 0, 9, 20, 100);
 }
 
@@ -390,10 +416,6 @@ void CommitLeg(Leg &leg)
     CommitServo(leg.getFootServo());
 }
 
-void SetSpeed()
-{
-}
-
 /// <summary>
 /// Write values to a single servo
 /// </summary>
@@ -401,12 +423,34 @@ void SetSpeed()
 void CommitServo(Servo servo)
 {
     // Serial.println("SetServo");
+    m_maestro.setSpeed(servo.getPololuChannel(), servo.getTargetSpeed());
 
     // TODO: Convert servo speed (0-100) to maestro speed
-    m_maestro.setSpeed(servo.getPololuChannel(), servo.getTargetSpeed());
-    m_maestro.setAcceleration(servo.getPololuChannel(), SERVO_ACCELERATION);
     uint16_t pololuPulseWidthTarget = servo.getTargetPosition() * 4;
     m_maestro.setTarget(servo.getPololuChannel(), pololuPulseWidthTarget);
+}
+
+void StopServos()
+{
+    for (int i = 0; i < 17; i++)
+    {
+        m_maestro.setTarget(i, 0);
+        delay(20);
+    }
+}
+
+void CommitAcceleration()
+{
+    for (int i = 0; i < 17; i++)
+    {
+        m_maestro.setAcceleration(i, SERVO_ACCELERATION);
+    }
+}
+
+void SendBluetoothBatteryLevel(int level)
+{
+    char charLevel = '0' + level;
+    m_bluetoothSerial.write(charLevel);
 }
 
 /*
@@ -431,7 +475,7 @@ void ReadBluetoothCommand(byte &action, byte &actionValue)
 
     action = ACTION_NOTHING;
     actionValue = 0;
-    Serial.println("bt");
+    // Serial.println("bt");
 
     if (m_bluetoothSerial.available())
     {

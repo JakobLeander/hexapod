@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using ArduinoBluetoothAPI;
 using UnityEngine.UI;
+using System;
 
 public class BluetoothManager : MonoBehaviour
 {
 
     public enum BluetoothState { Disconnected, Connecting, Connected };
+    private int _batteryLevel;
     private BluetoothHelper _btHelper;
     private BluetoothState _state;
     private DebugWindow _debugWindow;
@@ -17,6 +19,7 @@ public class BluetoothManager : MonoBehaviour
     void Start()
     {
         BluetoothHelper.BLE = false;
+        _batteryLevel = 1;
         _btHelper = BluetoothHelper.GetInstance();
         _btHelper.OnConnected += OnConnected;
         _btHelper.OnConnectionFailed += OnConnectionFailed;
@@ -45,7 +48,15 @@ public class BluetoothManager : MonoBehaviour
 
     void OnDataReceived(BluetoothHelper helper)
     {
-        string msg = _btHelper.Read();
+        string data= helper.Read();
+
+        if (Int32.TryParse(data, out int battery))
+        {
+            if (battery >= 0 && battery <= 9)
+            {
+                _batteryLevel = battery;
+            }
+        }
     }
 
     public void Connect()
@@ -58,6 +69,11 @@ public class BluetoothManager : MonoBehaviour
     public BluetoothState GetState()
     {
         return _state;
+    }
+
+    public int GetBatteryLevel()
+    {
+        return _batteryLevel;
     }
 
     public void Disconnect()

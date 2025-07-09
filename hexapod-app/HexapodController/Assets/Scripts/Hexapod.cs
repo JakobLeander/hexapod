@@ -7,6 +7,11 @@ using UnityEngine.UI;
 public class Hexapod : MonoBehaviour
 {
     public Button _bluetoothButton;
+    public Image _batteryImage;
+    public Sprite Battery01;
+    public Sprite Battery02;
+    public Sprite Battery03;
+    public Sprite Battery04;
     public FixedJoystick _moveJoystick;
     public FixedJoystick _positionJoystick;
     public Slider _heightSlider;
@@ -40,6 +45,27 @@ public class Hexapod : MonoBehaviour
         {
             _bluetoothButton.image.color = Color.white;
         }
+
+        int level = _bluetoothManager.GetBatteryLevel();
+        if (level == 0 || level == 1)
+        {
+            _batteryImage.sprite = Battery01;
+        }
+        if (level == 2 || level == 3||level==4)
+        {
+            _batteryImage.sprite = Battery02;
+        }
+        if (level == 5 || level == 6 || level == 7)
+        {
+            _batteryImage.sprite = Battery03;
+        }
+        if (level==8||level==9 )
+        {
+            _batteryImage.sprite = Battery04;
+        }
+        
+
+
 
         // Show joystick values
         _moveJoystickText.text = "" + _moveJoystick.Direction + "";
