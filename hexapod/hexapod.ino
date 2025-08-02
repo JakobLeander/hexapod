@@ -23,6 +23,9 @@ const char ACTION_FORWARD = 'F';                   // Walk forward
 const char ACTION_BACKWARD = 'B';                  // Walk backward
 const char ACTION_RIGHT = 'R';                     // Rotate right
 const char ACTION_LEFT = 'L';                      // Rotate left
+const char ACTION_ACTION = 'A';                    // Action
+const char ACTION_SLEEP = 'S';                     // Sleep
+const char ACTION_HOME = 'H';                      // Home
 
 Poses m_poses;
 
@@ -34,6 +37,7 @@ enum HexapodState
     WALKBACKWARD,
     ROTATELEFT,
     ROTATERIGHT,
+    ACTION,
 };
 
 // Initialize legs with their respective anchor positions
@@ -44,7 +48,6 @@ Leg m_RFrontLeg(LegId::RFRONT, 74, -39);
 Leg m_RMiddleLeg(LegId::RMIDDLE, 0, -64);
 Leg m_RBackLeg(LegId::RBACK, -74, -39);
 
-// Since our body center is higher than joint it cannot be zero
 int16_t ROBOT_HEIGHT = 127; // Desired height of the robot body above floor in millimeters
 const int8_t INTERPOLATIONS = 5;
 int8_t m_interpolationCount = -1;
@@ -53,6 +56,8 @@ uint8_t m_robot_speed = 20;
 
 HexapodState m_hexapodState = HexapodState::SLEEP;
 HexapodState m_hexapodDesiredState = HexapodState::SLEEP;
+uint8_t m_hexapodDesiredAction = 0;
+
 uint8_t m_hexapod_height = 5;         // 0 to 9
 uint8_t m_hexapod_desired_height = 5; // 0 to 9
 
@@ -82,7 +87,7 @@ void loop()
     // If no request to move for a while, stop moving unless we are in sleep or home state
     if ((millis() - m_lastCommand) > BREAK_TIME)
     {
-        if (m_hexapodState != HexapodState::SLEEP)
+        if (m_hexapodState != HexapodState::SLEEP && m_hexapodState != HexapodState::ACTION)
         {
             m_hexapodDesiredState = HexapodState::HOME;
         }
@@ -124,8 +129,6 @@ void loop()
         m_lastCommand = millis();
     }
 
-    // TODO: Use the speed value (actionValue) to set the speed of the robot
-
     // Height change
     if (action == 'Z')
     {
@@ -134,45 +137,53 @@ void loop()
     }
 
     // Home
-    if (action == 'H')
+    if (action == ACTION_HOME)
     {
         m_hexapodDesiredState = HexapodState::HOME;
         SetSpeed(0);
     }
 
     // Sleep
-    if (action == 'S')
+    if (action == ACTION_SLEEP)
     {
         m_hexapodDesiredState = HexapodState::SLEEP;
         SetSpeed(0);
     }
 
     // Forward
-    if (action == 'F')
+    if (action == ACTION_FORWARD)
     {
         m_hexapodDesiredState = HexapodState::WALKFORWARD;
         SetSpeed(actionValue);
     }
 
     // Backward
-    if (action == 'B')
+    if (action == ACTION_BACKWARD)
     {
         m_hexapodDesiredState = HexapodState::WALKBACKWARD;
         SetSpeed(actionValue);
     }
 
     // Rotate left
-    if (action == 'L')
+    if (action == ACTION_LEFT)
     {
         m_hexapodDesiredState = HexapodState::ROTATELEFT;
         SetSpeed(actionValue);
     }
 
     // Rotate right
-    if (action == 'R')
+    if (action == ACTION_RIGHT)
     {
         m_hexapodDesiredState = HexapodState::ROTATERIGHT;
         SetSpeed(actionValue);
+    }
+
+    // Do action movement
+    if (action == ACTION_ACTION)
+    {
+        m_hexapodDesiredState = HexapodState::ACTION;
+        SetSpeed(9);
+        m_hexapodDesiredAction = actionValue; // Store the action value for later use
     }
 
     // Do interpolation if we are in middle of a move
@@ -217,6 +228,12 @@ void DetermineNextMove()
             m_walkCycleCount = 0;
         }
 
+        if (m_hexapodState == HexapodState::ACTION)
+        {
+            m_hexapodState = m_hexapodDesiredState;
+            m_walkCycleCount = 0;
+        }
+
         // For gait state only allow changes when legs are in middle position
         // To check for completion of cycle 0 or 2 we look for cycle 1 or 3
         if (m_hexapodState == HexapodState::WALKFORWARD || m_hexapodState == HexapodState::WALKBACKWARD || m_hexapodState == HexapodState::ROTATELEFT || m_hexapodState == HexapodState::ROTATERIGHT)
@@ -226,6 +243,7 @@ void DetermineNextMove()
                 m_hexapodState = m_hexapodDesiredState;
             }
         }
+
         switch (m_hexapodState)
         {
         case HexapodState::HOME:
@@ -238,9 +256,10 @@ void DetermineNextMove()
         }
     }
 
-    switch (m_hexapodState)
+    // Do movement depending on state
+
+    if (m_hexapodState == HexapodState::WALKFORWARD)
     {
-    case HexapodState::WALKFORWARD:
         switch (m_walkCycleCount)
         {
         case 0:
@@ -262,8 +281,10 @@ void DetermineNextMove()
         {
             m_walkCycleCount = 0;
         }
-        break;
-    case HexapodState::WALKBACKWARD:
+    }
+
+    if (m_hexapodState == HexapodState::WALKBACKWARD)
+    {
         switch (m_walkCycleCount)
         {
         case 0:
@@ -285,8 +306,10 @@ void DetermineNextMove()
         {
             m_walkCycleCount = 0;
         }
-        break;
-    case HexapodState::ROTATELEFT:
+    }
+
+    if (m_hexapodState == HexapodState::ROTATELEFT)
+    {
         switch (m_walkCycleCount)
         {
         case 0:
@@ -308,9 +331,10 @@ void DetermineNextMove()
         {
             m_walkCycleCount = 0;
         }
-        break;
+    }
 
-    case HexapodState::ROTATERIGHT:
+    if (m_hexapodState == HexapodState::ROTATERIGHT)
+    {
         switch (m_walkCycleCount)
         {
         case 0:
@@ -332,10 +356,37 @@ void DetermineNextMove()
         {
             m_walkCycleCount = 0;
         }
-        break;
+    }
+
+    if (m_hexapodState == HexapodState::ACTION)
+    {
+        if (m_hexapodDesiredAction == 1)
+        {
+            switch (m_walkCycleCount)
+            {
+            case 0:
+                MoveKeyFrame(m_poses.A1_1(m_hexapod_height));
+                break;
+            case 1:
+                MoveKeyFrame(m_poses.A1_2(m_hexapod_height));
+                break;
+            case 2:
+                MoveKeyFrame(m_poses.A1_3(m_hexapod_height));
+                break;
+            case 3:
+                MoveKeyFrame(m_poses.A1_4(m_hexapod_height));
+                break;
+            }
+        }
+
+        m_walkCycleCount++;
+        if (m_walkCycleCount > 3)
+        {
+            m_walkCycleCount = 0;
+            m_hexapodDesiredState = HexapodState::HOME;
+        }
     }
 }
-
 void SetSpeed(uint8_t speed)
 {
     uint8_t current_speed = m_robot_speed;
@@ -432,7 +483,7 @@ void CommitServo(Servo servo)
 
 void StopServos()
 {
-    for (int i = 0; i < 17; i++)
+    for (uint8_t i = 0; i < 17; i++)
     {
         m_maestro.setTarget(i, 0);
         delay(20);
@@ -451,6 +502,7 @@ void SendBluetoothBatteryLevel(int level)
 {
     char charLevel = '0' + level;
     m_bluetoothSerial.write(charLevel);
+    Serial.println(charLevel);
 }
 
 /*

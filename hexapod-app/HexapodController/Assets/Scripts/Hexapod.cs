@@ -140,6 +140,15 @@ public class Hexapod : MonoBehaviour
         SendBluetoothData("H0");
 
     }
+
+    public void ActionButtonHandler(string actionName)
+    {
+        _debugWindow.LogButtonPress("Action Button Press: " + actionName);
+
+        SendBluetoothData("A" + actionName);
+
+    }
+
     private void SendBluetoothData(string data)
     {
         if (_bluetoothManager.GetState() == BluetoothManager.BluetoothState.Connected)
