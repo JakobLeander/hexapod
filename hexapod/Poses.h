@@ -192,5 +192,31 @@ public:
             .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height}};
         return frame;
     }
+
+    KeyFrame A2_1(uint8_t height)
+    {
+        int16_t foot_home_height = map(height, 0, 9, MIN_HOME_HEIGHT, MAX_HOME_HEIGHT);
+        KeyFrame frame{
+            .LFront = {FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_home_height},
+            .LMiddle = {0, FOOT_WIDTH_M+50, foot_home_height+50},
+            .LBack = {-FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_home_height},
+            .RFront = {FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height},
+            .RMiddle = {0, -FOOT_WIDTH_M, foot_home_height},
+            .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height}};
+        return frame;
+    }
+
+    KeyFrame A2_2(uint8_t height)
+    {
+        int16_t foot_home_height = map(height, 0, 9, MIN_HOME_HEIGHT, MAX_HOME_HEIGHT);
+        KeyFrame frame{
+            .LFront = {FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_home_height},
+            .LMiddle = {0, FOOT_WIDTH_M+50, foot_home_height},
+            .LBack = {-FOOT_FB_DISTANCE, FOOT_WIDTH_FB, foot_home_height},
+            .RFront = {FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height},
+            .RMiddle = {0, -FOOT_WIDTH_M, foot_home_height},
+            .RBack = {-FOOT_FB_DISTANCE, -FOOT_WIDTH_FB, foot_home_height}};
+        return frame;
+    }
 };
 #endif

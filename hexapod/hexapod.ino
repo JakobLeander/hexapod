@@ -101,10 +101,10 @@ void loop()
         // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
         float voltage = sensorValue * (5.0 / 1023.0);
 
-        // Map voltage between 3.2 and 4.2 to a value between 0 and 9
+        // Map voltage between 3.3 and 4.2 to a value between 0 and 9
         int mapValue = (int)(voltage * 10);
-        mapValue = constrain(mapValue, 32, 42);
-        int submitValue = map(mapValue, 32, 42, 0, 9);
+        mapValue = constrain(mapValue, 33, 42);
+        int submitValue = map(mapValue, 33, 42, 0, 9);
         SendBluetoothBatteryLevel(submitValue);
         Serial.println(voltage);
 
@@ -375,6 +375,25 @@ void DetermineNextMove()
                 break;
             case 3:
                 MoveKeyFrame(m_poses.A1_4(m_hexapod_height));
+                break;
+            }
+        }
+
+        if (m_hexapodDesiredAction == 2)
+        {
+            switch (m_walkCycleCount)
+            {
+            case 0:
+                MoveKeyFrame(m_poses.A2_1(m_hexapod_height));
+                break;
+            case 1:
+                MoveKeyFrame(m_poses.A2_2(m_hexapod_height));
+                break;
+            case 2:
+                MoveKeyFrame(m_poses.A2_1(m_hexapod_height));
+                break;
+            case 3:
+                MoveKeyFrame(m_poses.Home(m_hexapod_height));
                 break;
             }
         }
